@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hu">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trip Planner</title>
+  <title>Nyári Buli</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -211,7 +211,6 @@
     .cal-cell--future:hover { border-color: #bbb; background: #f1f3f8; }
     .cal-cell--today  { border-color: #3498db !important; }
 
-    /* Semi-transparent color overlays for each person who selected the day */
     .color-layer {
       position: absolute;
       inset: 0;
@@ -230,7 +229,6 @@
     .cal-cell--today .day-num { color: #2471a3; }
     .cal-cell--past  .day-num { color: #ccc; }
 
-    /* Colored dots at the bottom — one per person */
     .day-dots {
       position: relative;
       z-index: 2;
@@ -258,7 +256,6 @@
       margin-bottom: 12px;
     }
 
-    /* Popular dates */
     .pop-item {
       padding: 10px 12px;
       background: #f7f8fa;
@@ -286,7 +283,6 @@
       line-height: 1.7;
     }
 
-    /* Who's planning */
     .who-item {
       display: flex;
       align-items: center;
@@ -304,53 +300,53 @@
 </head>
 <body>
 
-<!-- ═══════════════════════ LOGIN ════════════════════════ -->
+<!-- ═══════════════════════ BEJELENTKEZÉS ════════════════ -->
 <div id="login-screen">
   <div class="login-card">
-    <span class="login-emoji">✈️</span>
-    <h1>Trip Planner</h1>
-    <p>Enter your name to see the calendar and mark when you're available.<br>
-       Come back with the same name and you'll keep your colour.</p>
+    <span class="login-emoji">🌴</span>
+    <h1>Nyári Buli</h1>
+    <p>Add meg a neved, hogy lásd a naptárat és bejelölhesd, mikor érsz rá.<br>
+       Ha visszajössz ugyanezzel a névvel, ugyanazt a színt kapod.</p>
     <input id="name-input" class="login-input" type="text"
-           placeholder="Your name…" maxlength="40"
+           placeholder="A neved…" maxlength="40"
            autocomplete="off" autocapitalize="words" spellcheck="false">
     <div class="login-error" id="login-error"></div>
-    <button id="login-btn" class="login-btn">Let's go →</button>
+    <button id="login-btn" class="login-btn">Belépés →</button>
   </div>
 </div>
 
 <!-- ═══════════════════════ APP ══════════════════════════ -->
 <div id="app-screen">
   <header class="app-header">
-    <span class="header-title">✈️ Trip Planner</span>
+    <span class="header-title">🌴 Nyári Buli</span>
     <div class="header-user">
       <div class="header-dot" id="header-dot"></div>
       <span id="header-name"></span>
     </div>
-    <button class="change-btn" id="change-btn">Change name</button>
+    <button class="change-btn" id="change-btn">Név módosítása</button>
   </header>
 
   <div class="app-body">
-    <!-- Calendar -->
+    <!-- Naptár -->
     <div class="card">
       <div class="cal-nav">
-        <button class="nav-btn" id="cal-prev">← Prev</button>
+        <button class="nav-btn" id="cal-prev">← Előző</button>
         <span class="cal-month" id="cal-month"></span>
-        <button class="nav-btn" id="cal-next">Next →</button>
+        <button class="nav-btn" id="cal-next">Következő →</button>
       </div>
       <div class="cal-legend" id="cal-legend"></div>
-      <p class="cal-hint">Click a day to mark when you're available — click again to unmark.</p>
+      <p class="cal-hint">Kattints egy napra, ha ráérsz – kattints újra a jelölés törléséhez.</p>
       <div class="cal-grid" id="cal-grid"></div>
     </div>
 
-    <!-- Sidebar -->
+    <!-- Oldalsáv -->
     <aside class="sidebar">
       <div class="card">
-        <p class="section-label">Best dates</p>
+        <p class="section-label">Legjobb dátumok</p>
         <div id="popular-list"></div>
       </div>
       <div class="card">
-        <p class="section-label">Who's planning</p>
+        <p class="section-label">Kik terveznek</p>
         <div id="who-list"></div>
       </div>
     </aside>
@@ -359,61 +355,54 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
-//  CONFIGURATION
-//
-//  Step 1: Go to https://console.firebase.google.com
-//  Step 2: Create a project → Realtime Database → Create database
-//          Choose "Start in test mode" (allows everyone to read/write)
-//  Step 3: Copy your database URL (looks like the example below)
-//  Step 4: Replace the placeholder string below with your URL
+//  Firebase Realtime Database URL
 // ═══════════════════════════════════════════════════════════
-const FIREBASE_URL = 'https://nyari-buli-default-rtdb.firebaseio.com/';
+const FIREBASE_URL = 'https://nyari-buli-default-rtdb.firebaseio.com';
 // ═══════════════════════════════════════════════════════════
 
 const USER_COLORS = [
-  { hex: '#e74c3c', rgba: 'rgba(231,76,60,0.4)'   },  // Red
-  { hex: '#3498db', rgba: 'rgba(52,152,219,0.4)'  },  // Blue
-  { hex: '#2ecc71', rgba: 'rgba(46,204,113,0.4)'  },  // Green
-  { hex: '#f39c12', rgba: 'rgba(243,156,18,0.4)'  },  // Orange
-  { hex: '#9b59b6', rgba: 'rgba(155,89,182,0.4)'  },  // Purple
-  { hex: '#1abc9c', rgba: 'rgba(26,188,156,0.4)'  },  // Teal
-  { hex: '#e67e22', rgba: 'rgba(230,126,34,0.4)'  },  // Dark Orange
-  { hex: '#2980b9', rgba: 'rgba(41,128,185,0.4)'  },  // Dark Blue
-  { hex: '#c0392b', rgba: 'rgba(192,57,43,0.4)'   },  // Dark Red
-  { hex: '#16a085', rgba: 'rgba(22,160,133,0.4)'  },  // Dark Teal
+  { hex: '#e74c3c', rgba: 'rgba(231,76,60,0.4)'   },
+  { hex: '#3498db', rgba: 'rgba(52,152,219,0.4)'  },
+  { hex: '#2ecc71', rgba: 'rgba(46,204,113,0.4)'  },
+  { hex: '#f39c12', rgba: 'rgba(243,156,18,0.4)'  },
+  { hex: '#9b59b6', rgba: 'rgba(155,89,182,0.4)'  },
+  { hex: '#1abc9c', rgba: 'rgba(26,188,156,0.4)'  },
+  { hex: '#e67e22', rgba: 'rgba(230,126,34,0.4)'  },
+  { hex: '#2980b9', rgba: 'rgba(41,128,185,0.4)'  },
+  { hex: '#c0392b', rgba: 'rgba(192,57,43,0.4)'   },
+  { hex: '#16a085', rgba: 'rgba(22,160,133,0.4)'  },
 ];
 
-const MONTHS = ['January','February','March','April','May','June',
-                'July','August','September','October','November','December'];
-const DAYS   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const MONTHS = ['Január','Február','Március','Április','Május','Június',
+                'Július','Augusztus','Szeptember','Október','November','December'];
+const DAYS   = ['H','K','Sze','Cs','P','Szo','V'];
 
-// ── State ──────────────────────────────────────────────────
-let me        = null;   // { key, displayName, colorIdx }
-let allUsers  = {};     // key → { displayName, colorIdx }
-let avail     = {};     // key → { 'YYYY-MM-DD': true }
-let curYear   = new Date().getFullYear();
-let curMonth  = new Date().getMonth();
+// ── Állapot ────────────────────────────────────────────────
+let me        = null;
+let allUsers  = {};
+let avail     = {};
+let curYear   = 2026;
+let curMonth  = 6;   // Július (0-alapú)
 let pollTimer = null;
 
-// ── HTML escaping (prevent XSS from user-supplied names) ───
+// ── HTML escape ────────────────────────────────────────────
 function esc(s) {
   return String(s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// ── Name → safe Firebase key ───────────────────────────────
-// Firebase keys cannot contain . # $ / [ ]
+// ── Név → Firebase kulcs ───────────────────────────────────
 function nameToKey(name) {
   return name.trim()
     .toLowerCase()
-    .replace(/[.#$/\[\]]/g, '')  // remove forbidden chars
+    .replace(/[.#$/\[\]]/g, '')
     .replace(/\s+/g, '_')
     .replace(/^_+|_+$/g, '')
     || 'user';
 }
 
-// ── Date helpers (always local-time, never toISOString) ────
+// ── Dátum segédfüggvények (helyi idő, soha nem toISOString) ─
 function toISO(y, m, d) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
@@ -428,17 +417,17 @@ function addDays(iso, n) {
 }
 function fmtShort(iso) {
   const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return new Date(y, m - 1, d).toLocaleDateString('hu-HU', { day: 'numeric', month: 'short' });
 }
 function fmtFull(iso) {
   const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(y, m - 1, d).toLocaleDateString('hu-HU', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-// ── Firebase REST helpers ──────────────────────────────────
+// ── Firebase REST ──────────────────────────────────────────
 async function fbGet(path) {
   const r = await fetch(`${FIREBASE_URL}/${path}.json`);
-  if (!r.ok) throw new Error(`Firebase read failed (${r.status})`);
+  if (!r.ok) throw new Error(`Firebase olvasási hiba (${r.status})`);
   return r.json();
 }
 async function fbPut(path, val) {
@@ -447,25 +436,24 @@ async function fbPut(path, val) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(val),
   });
-  if (!r.ok) throw new Error(`Firebase write failed (${r.status})`);
+  if (!r.ok) throw new Error(`Firebase írási hiba (${r.status})`);
 }
 async function fbDelete(path) {
   const r = await fetch(`${FIREBASE_URL}/${path}.json`, { method: 'DELETE' });
-  if (!r.ok) throw new Error(`Firebase delete failed (${r.status})`);
+  if (!r.ok) throw new Error(`Firebase törlési hiba (${r.status})`);
 }
 
-// ── Fetch all data ─────────────────────────────────────────
+// ── Összes adat lekérése ───────────────────────────────────
 async function fetchAll() {
   const data = await fbGet('');
   allUsers = data?.users ?? {};
   avail    = data?.avail ?? {};
 }
 
-// ── Demo mode (no Firebase configured) ────────────────────
+// ── Demo mód (nincs Firebase beállítva) ───────────────────
 function loadDemoMode(rawName) {
-  const myKey = nameToKey(rawName) || 'you';
+  const myKey = nameToKey(rawName) || 'te';
 
-  // Build fake friend data
   allUsers = {
     [myKey]:  { displayName: rawName, colorIdx: 0 },
     'anna':   { displayName: 'Anna',  colorIdx: 1 },
@@ -473,35 +461,28 @@ function loadDemoMode(rawName) {
     'sara':   { displayName: 'Sára',  colorIdx: 3 },
   };
 
-  // Generate fake availability around the current month
-  const base = todayISO();
-  function pick(...offsets) {
-    return Object.fromEntries(offsets.map(n => [addDays(base, n), true]));
-  }
-
   avail = {
-    [myKey]: pick(3, 4, 5, 6, 14, 15, 22),
-    'anna':  pick(3, 4, 5, 6, 7, 13, 14, 15, 28),
-    'peter': pick(4, 5, 6, 14, 15, 16, 21, 22),
-    'sara':  pick(5, 6, 14, 15, 20, 21, 22),
+    [myKey]: { '2026-07-03': true, '2026-07-04': true, '2026-07-05': true, '2026-07-06': true, '2026-07-14': true, '2026-07-15': true, '2026-07-22': true },
+    'anna':  { '2026-07-03': true, '2026-07-04': true, '2026-07-05': true, '2026-07-06': true, '2026-07-07': true, '2026-07-13': true, '2026-07-14': true, '2026-07-15': true, '2026-07-28': true },
+    'peter': { '2026-07-04': true, '2026-07-05': true, '2026-07-06': true, '2026-07-14': true, '2026-07-15': true, '2026-07-16': true, '2026-07-21': true, '2026-07-22': true },
+    'sara':  { '2026-07-05': true, '2026-07-06': true, '2026-07-14': true, '2026-07-15': true, '2026-07-20': true, '2026-07-21': true, '2026-07-22': true },
   };
 
   me = { key: myKey, displayName: rawName, colorIdx: 0 };
   localStorage.setItem('trip_name', rawName);
 
-  // Show a demo banner
   document.getElementById('app-screen').insertAdjacentHTML('afterbegin',
     `<div style="background:#f39c12;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-weight:600;">
-      DEMO MODE — add your Firebase URL to index.html to save data
+      DEMO MÓD — add meg a Firebase URL-t az index.html-ben az adatok mentéséhez
      </div>`);
 
   showApp();
 }
 
-// ── Login ──────────────────────────────────────────────────
+// ── Bejelentkezés ──────────────────────────────────────────
 async function doLogin(rawName) {
   rawName = rawName.trim();
-  if (!rawName) { showErr('Please enter your name.'); return; }
+  if (!rawName) { showErr('Kérjük add meg a neved.'); return; }
 
   if (FIREBASE_URL.includes('YOUR-PROJECT')) {
     loadDemoMode(rawName);
@@ -509,8 +490,8 @@ async function doLogin(rawName) {
   }
 
   const key = nameToKey(rawName);
-  if (!key || key === 'user' && !rawName.match(/user/i)) {
-    showErr('Name contains only special characters — try again.');
+  if (!key || (key === 'user' && !rawName.match(/user/i))) {
+    showErr('A név csak speciális karaktereket tartalmaz – próbáld újra.');
     return;
   }
 
@@ -520,10 +501,8 @@ async function doLogin(rawName) {
 
     let colorIdx;
     if (allUsers[key]) {
-      // Returning user — restore their colour
       colorIdx = allUsers[key].colorIdx;
     } else {
-      // New user — assign next unused colour
       const used = new Set(Object.values(allUsers).map(u => u.colorIdx));
       colorIdx = 0;
       while (used.has(colorIdx) && colorIdx < USER_COLORS.length - 1) colorIdx++;
@@ -535,30 +514,27 @@ async function doLogin(rawName) {
     localStorage.setItem('trip_name', rawName);
     showApp();
   } catch (err) {
-    showErr('Could not connect. Check your Firebase URL and database rules.');
+    showErr('Nem sikerült csatlakozni. Ellenőrizd a Firebase URL-t és az adatbázis szabályait.');
   } finally {
     setBtnLoading(false);
   }
 }
 
-// ── Toggle availability for a day ─────────────────────────
+// ── Nap be/kijelölése ──────────────────────────────────────
 async function toggleDate(iso) {
   const { key } = me;
   const wasOn = !!(avail[key] && avail[key][iso]);
 
-  // Optimistic UI update
   if (!avail[key]) avail[key] = {};
   if (wasOn) delete avail[key][iso];
   else avail[key][iso] = true;
   renderCalendar();
   renderSidebar();
 
-  // Persist to Firebase
   try {
     if (wasOn) await fbDelete(`avail/${key}/${iso}`);
     else       await fbPut(`avail/${key}/${iso}`, true);
   } catch {
-    // Revert on failure
     if (wasOn) avail[key][iso] = true;
     else delete avail[key][iso];
     renderCalendar();
@@ -566,12 +542,12 @@ async function toggleDate(iso) {
   }
 }
 
-// ── Who has a given date? ──────────────────────────────────
+// ── Kik jelölték be az adott napot? ───────────────────────
 function usersForDate(iso) {
   return Object.keys(allUsers).filter(k => avail[k] && avail[k][iso]);
 }
 
-// ── Render: calendar grid ──────────────────────────────────
+// ── Naptár megjelenítése ───────────────────────────────────
 function renderCalendar() {
   document.getElementById('cal-month').textContent = `${MONTHS[curMonth]} ${curYear}`;
 
@@ -579,7 +555,6 @@ function renderCalendar() {
   const today = todayISO();
   const days  = new Date(curYear, curMonth + 1, 0).getDate();
 
-  // Offset so grid starts on Monday (JS: 0=Sun)
   let startOff = new Date(curYear, curMonth, 1).getDay();
   startOff = startOff === 0 ? 6 : startOff - 1;
 
@@ -588,7 +563,7 @@ function renderCalendar() {
   for (let i = 0; i < startOff; i++) html += `<div class="cal-cell cal-cell--empty"></div>`;
 
   for (let d = 1; d <= days; d++) {
-    const iso   = toISO(curYear, curMonth, d);
+    const iso     = toISO(curYear, curMonth, d);
     const isPast  = iso < today;
     const isToday = iso === today;
     const users   = usersForDate(iso);
@@ -597,13 +572,11 @@ function renderCalendar() {
     cls += isPast ? 'cal-cell--past' : 'cal-cell--future';
     if (isToday) cls += ' cal-cell--today';
 
-    // One semi-transparent overlay per person — they visually blend together
     const layers = users.map(k => {
       const c = USER_COLORS[allUsers[k]?.colorIdx ?? 0].rgba;
       return `<div class="color-layer" style="background:${c}"></div>`;
     }).join('');
 
-    // Small coloured dots at the bottom — one per person
     const dots = users.length
       ? `<div class="day-dots">${users.map(k => {
           const c    = USER_COLORS[allUsers[k]?.colorIdx ?? 0].hex;
@@ -626,7 +599,7 @@ function renderCalendar() {
   });
 }
 
-// ── Render: legend ─────────────────────────────────────────
+// ── Jelmagyarázat ──────────────────────────────────────────
 function renderLegend() {
   document.getElementById('cal-legend').innerHTML =
     Object.entries(allUsers).map(([k, u]) => {
@@ -634,12 +607,12 @@ function renderLegend() {
       const isMe = k === me.key;
       return `<div class="legend-item">
         <div class="legend-swatch" style="background:${c}"></div>
-        <span>${esc(u.displayName)}${isMe ? ' <span style="color:#aaa;font-weight:400">(you)</span>' : ''}</span>
+        <span>${esc(u.displayName)}${isMe ? ' <span style="color:#aaa;font-weight:400">(te)</span>' : ''}</span>
       </div>`;
     }).join('');
 }
 
-// ── Render: sidebar ────────────────────────────────────────
+// ── Oldalsáv ───────────────────────────────────────────────
 function renderSidebar() {
   renderWhos();
   renderPopular();
@@ -649,7 +622,7 @@ function renderWhos() {
   const el      = document.getElementById('who-list');
   const entries = Object.entries(allUsers);
   if (!entries.length) {
-    el.innerHTML = '<p style="font-size:13px;color:#aaa">No one has joined yet!</p>';
+    el.innerHTML = '<p style="font-size:13px;color:#aaa">Még senki sem csatlakozott!</p>';
     return;
   }
   el.innerHTML = entries.map(([k, u]) => {
@@ -658,8 +631,8 @@ function renderWhos() {
     const isMe  = k === me.key;
     return `<div class="who-item">
       <div class="who-dot" style="background:${c}"></div>
-      <span class="who-name">${esc(u.displayName)}${isMe ? ' <span class="who-you">(you)</span>' : ''}</span>
-      <span class="who-count">${count} day${count !== 1 ? 's' : ''}</span>
+      <span class="who-name">${esc(u.displayName)}${isMe ? ' <span class="who-you">(te)</span>' : ''}</span>
+      <span class="who-count">${count} nap</span>
     </div>`;
   }).join('');
 }
@@ -667,7 +640,6 @@ function renderWhos() {
 function renderPopular() {
   const el = document.getElementById('popular-list');
 
-  // Build date → Set<userKey>
   const dateMap = {};
   Object.keys(allUsers).forEach(k => {
     Object.keys(avail[k] ?? {}).forEach(iso => {
@@ -676,18 +648,16 @@ function renderPopular() {
     });
   });
 
-  // Only dates with 2+ people
   const overlapDates = Object.keys(dateMap)
     .filter(iso => dateMap[iso].size >= 2)
     .sort();
 
   if (!overlapDates.length) {
-    el.innerHTML = `<p class="pop-empty">No overlapping dates yet.<br>
-      Share the site link with your friends so they can mark their dates!</p>`;
+    el.innerHTML = `<p class="pop-empty">Még nincs átfedő dátum.<br>
+      Oszd meg a linket a barátaiddal, hogy ők is bejelölhessék a napjaikat!</p>`;
     return;
   }
 
-  // Group consecutive dates into ranges
   const groups = [];
   let grp = null;
   overlapDates.forEach(iso => {
@@ -700,8 +670,6 @@ function renderPopular() {
     }
   });
 
-  // Score each group: find users available for ALL days in the group ("core"),
-  // prefer more people and longer consecutive runs
   const scored = groups.map(g => {
     const core = g.dates.reduce((acc, iso) => {
       const dayUsers = dateMap[iso];
@@ -714,7 +682,6 @@ function renderPopular() {
       ...g,
       core,
       maxPeople,
-      // Primary: how many are free every day; Secondary: streak length; Tertiary: max overlap
       score: core.size * 1000 + g.dates.length * 10 + maxPeople,
     };
   });
@@ -726,14 +693,13 @@ function renderPopular() {
       ? fmtFull(g.start)
       : `${fmtShort(g.start)} – ${fmtShort(g.end)}`;
 
-    // Show core users (free all days), fall back to union of anyone available
     const showKeys = g.core.size >= 2
       ? [...g.core]
       : [...new Set(g.dates.flatMap(iso => [...dateMap[iso]]))];
 
-    const days    = g.dates.length;
-    const people  = g.core.size >= 2 ? g.core.size : g.maxPeople;
-    const meta    = `${people} people free${days > 1 ? ` · ${days} days in a row` : ''}`;
+    const days   = g.dates.length;
+    const people = g.core.size >= 2 ? g.core.size : g.maxPeople;
+    const meta   = `${people} ember ér rá${days > 1 ? ` · ${days} egymás utáni nap` : ''}`;
 
     const userChips = showKeys.map(k => {
       const c    = USER_COLORS[allUsers[k]?.colorIdx ?? 0].hex;
@@ -752,7 +718,7 @@ function renderPopular() {
   }).join('');
 }
 
-// ── Show / hide screens ────────────────────────────────────
+// ── Képernyők ──────────────────────────────────────────────
 function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-screen').style.display  = 'block';
@@ -765,7 +731,6 @@ function showApp() {
   renderCalendar();
   renderSidebar();
 
-  // Refresh data every 12 seconds so everyone sees each other's updates
   clearInterval(pollTimer);
   pollTimer = setInterval(async () => {
     await fetchAll();
@@ -789,11 +754,11 @@ function showErr(msg) {
 }
 function setBtnLoading(on) {
   const btn = document.getElementById('login-btn');
-  btn.textContent = on ? 'Connecting…' : "Let's go →";
+  btn.textContent = on ? 'Csatlakozás…' : 'Belépés →';
   btn.disabled = on;
 }
 
-// ── Event listeners ────────────────────────────────────────
+// ── Eseménykezelők ─────────────────────────────────────────
 document.getElementById('login-btn').addEventListener('click',
   () => doLogin(document.getElementById('name-input').value));
 
@@ -813,12 +778,12 @@ document.getElementById('cal-next').addEventListener('click', () => {
   renderCalendar();
 });
 
-// ── Auto-login from localStorage ───────────────────────────
+// ── Automatikus bejelentkezés ──────────────────────────────
 (async () => {
   const saved = localStorage.getItem('trip_name');
   if (saved) {
     document.getElementById('name-input').value = saved;
-    try { await doLogin(saved); } catch { /* fail silently */ }
+    try { await doLogin(saved); } catch { /* csendes hiba */ }
   }
 })();
 </script>
