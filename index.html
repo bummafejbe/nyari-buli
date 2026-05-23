@@ -725,14 +725,16 @@ function renderCalendar() {
 // ── Jelmagyarázat ──────────────────────────────────────────
 function renderLegend() {
   document.getElementById('cal-legend').innerHTML =
-    Object.entries(allUsers).map(([k, u]) => {
-      const c    = USER_COLORS[u.colorIdx ?? 0].hex;
-      const isMe = k === me.key;
-      return `<div class="legend-item">
-        <div class="legend-swatch" style="background:${c}"></div>
-        <span>${esc(u.displayName)}${isMe ? ` <span style="color:#aaa;font-weight:400">${L().youLabel}</span>` : ''}</span>
-      </div>`;
-    }).join('');
+    Object.entries(allUsers)
+      .filter(([k]) => Object.keys(avail[k] ?? {}).length > 0)
+      .map(([k, u]) => {
+        const c    = USER_COLORS[u.colorIdx ?? 0].hex;
+        const isMe = k === me.key;
+        return `<div class="legend-item">
+          <div class="legend-swatch" style="background:${c}"></div>
+          <span>${esc(u.displayName)}${isMe ? ` <span style="color:#aaa;font-weight:400">${L().youLabel}</span>` : ''}</span>
+        </div>`;
+      }).join('');
 }
 
 // ── Oldalsáv ───────────────────────────────────────────────
@@ -740,7 +742,7 @@ function renderSidebar() { renderWhos(); renderPopular(); }
 
 function renderWhos() {
   const el      = document.getElementById('who-list');
-  const entries = Object.entries(allUsers);
+  const entries = Object.entries(allUsers).filter(([k]) => Object.keys(avail[k] ?? {}).length > 0);
   if (!entries.length) {
     el.innerHTML = `<p style="font-size:13px;color:#aaa">${L().noOneYet}</p>`;
     return;
