@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trip Planner</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #eef1f6;
+      min-height: 100vh;
+      color: #1a1a2e;
+    }
+
+    /* ── Login ──────────────────────────────────────────── */
+    #login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .login-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 44px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+      text-align: center;
+    }
+    .login-emoji { font-size: 52px; margin-bottom: 16px; display: block; }
+    .login-card h1 { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+    .login-card p { color: #666; font-size: 14px; line-height: 1.6; margin-bottom: 28px; }
+    .login-input {
+      width: 100%;
+      padding: 13px 16px;
+      border: 2px solid #e8e8e8;
+      border-radius: 10px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 10px;
+    }
+    .login-input:focus { border-color: #3498db; }
+    .login-error {
+      color: #e74c3c;
+      font-size: 13px;
+      margin-bottom: 10px;
+      min-height: 20px;
+    }
+    .login-btn {
+      width: 100%;
+      padding: 13px;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .login-btn:hover { background: #2980b9; }
+    .login-btn:active { transform: scale(0.98); }
+    .login-btn:disabled { background: #aaa; cursor: not-allowed; transform: none; }
+
+    /* ── App ────────────────────────────────────────────── */
+    #app-screen { display: none; min-height: 100vh; }
+
+    .app-header {
+      background: #fff;
+      border-bottom: 1px solid #e8e8e8;
+      padding: 0 20px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    }
+    .header-title { font-size: 17px; font-weight: 800; flex: 1; }
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .header-dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .change-btn {
+      padding: 6px 13px;
+      border: 1.5px solid #ddd;
+      border-radius: 7px;
+      background: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      color: #555;
+      font-weight: 500;
+    }
+    .change-btn:hover { background: #f5f5f5; border-color: #bbb; }
+
+    /* ── Layout ─────────────────────────────────────────── */
+    .app-body {
+      display: grid;
+      grid-template-columns: 1fr 290px;
+      gap: 18px;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 20px 16px;
+    }
+    @media (max-width: 740px) {
+      .app-body { grid-template-columns: 1fr; }
+    }
+
+    /* ── Card ───────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+
+    /* ── Calendar nav ───────────────────────────────────── */
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .nav-btn {
+      padding: 6px 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #444;
+    }
+    .nav-btn:hover { background: #f5f5f5; border-color: #bbb; }
+    .cal-month { font-size: 18px; font-weight: 800; }
+
+    /* ── Legend ─────────────────────────────────────────── */
+    .cal-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      background: #f7f8fa;
+      border-radius: 9px;
+      min-height: 38px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #444;
+    }
+    .legend-swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Calendar grid ──────────────────────────────────── */
+    .cal-hint { font-size: 12px; color: #aaa; margin-bottom: 10px; }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+    .cal-hdr {
+      text-align: center;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #bbb;
+      padding: 5px 0;
+    }
+    .cal-cell {
+      position: relative;
+      overflow: hidden;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      min-height: 70px;
+      display: flex;
+      flex-direction: column;
+    }
+    .cal-cell--empty { background: transparent; border-color: transparent; }
+    .cal-cell--past  { background: #f8f8f8; opacity: 0.5; }
+    .cal-cell--future {
+      background: #fafafa;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .cal-cell--future:hover { border-color: #bbb; background: #f1f3f8; }
+    .cal-cell--today  { border-color: #3498db !important; }
+
+    /* Semi-transparent color overlays for each person who selected the day */
+    .color-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .day-num {
+      position: relative;
+      z-index: 2;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 7px 8px 3px;
+      display: block;
+      line-height: 1;
+    }
+    .cal-cell--today .day-num { color: #2471a3; }
+    .cal-cell--past  .day-num { color: #ccc; }
+
+    /* Colored dots at the bottom — one per person */
+    .day-dots {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      padding: 3px 7px 7px;
+      margin-top: auto;
+    }
+    .day-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Sidebar ────────────────────────────────────────── */
+    .sidebar { display: flex; flex-direction: column; gap: 14px; }
+    .section-label {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #bbb;
+      margin-bottom: 12px;
+    }
+
+    /* Popular dates */
+    .pop-item {
+      padding: 10px 12px;
+      background: #f7f8fa;
+      border-radius: 9px;
+      margin-bottom: 8px;
+    }
+    .pop-item:last-child { margin-bottom: 0; }
+    .pop-date { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+    .pop-meta { font-size: 11px; color: #777; margin-bottom: 6px; }
+    .pop-users { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pop-user {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #444;
+    }
+    .pop-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .pop-empty {
+      font-size: 13px;
+      color: #aaa;
+      text-align: center;
+      padding: 20px 0;
+      line-height: 1.7;
+    }
+
+    /* Who's planning */
+    .who-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px;
+    }
+    .who-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .who-dot  { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+    .who-name { flex: 1; font-weight: 600; }
+    .who-you  { font-size: 11px; color: #aaa; font-weight: 400; }
+    .who-count { font-size: 11px; color: #aaa; white-space: nowrap; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════ LOGIN ════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <span class="login-emoji">✈️</span>
+    <h1>Trip Planner</h1>
+    <p>Enter your name to see the calendar and mark when you're available.<br>
+       Come back with the same name and you'll keep your colour.</p>
+    <input id="name-input" class="login-input" type="text"
+           placeholder="Your name…" maxlength="40"
+           autocomplete="off" autocapitalize="words" spellcheck="false">
+    <div class="login-error" id="login-error"></div>
+    <button id="login-btn" class="login-btn">Let's go →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ APP ══════════════════════════ -->
+<div id="app-screen">
+  <header class="app-header">
+    <span class="header-title">✈️ Trip Planner</span>
+    <div class="header-user">
+      <div class="header-dot" id="header-dot"></div>
+      <span id="header-name"></span>
+    </div>
+    <button class="change-btn" id="change-btn">Change name</button>
+  </header>
+
+  <div class="app-body">
+    <!-- Calendar -->
+    <div class="card">
+      <div class="cal-nav">
+        <button class="nav-btn" id="cal-prev">← Prev</button>
+        <span class="cal-month" id="cal-month"></span>
+        <button class="nav-btn" id="cal-next">Next →</button>
+      </div>
+      <div class="cal-legend" id="cal-legend"></div>
+      <p class="cal-hint">Click a day to mark when you're available — click again to unmark.</p>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="card">
+        <p class="section-label">Best dates</p>
+        <div id="popular-list"></div>
+      </div>
+      <div class="card">
+        <p class="section-label">Who's planning</p>
+        <div id="who-list"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  CONFIGURATION
+//
+//  Step 1: Go to https://console.firebase.google.com
+//  Step 2: Create a project → Realtime Database → Create database
+//          Choose "Start in test mode" (allows everyone to read/write)
+//  Step 3: Copy your database URL (looks like the example below)
+//  Step 4: Replace the placeholder string below with your URL
+// ═══════════════════════════════════════════════════════════
+const FIREBASE_URL = 'https://nyari-buli-default-rtdb.firebaseio.com/';
+// ═══════════════════════════════════════════════════════════
+
+const USER_COLORS = [
+  { hex: '#e74c3c', rgba: 'rgba(231,76,60,0.4)'   },  // Red
+  { hex: '#3498db', rgba: 'rgba(52,152,219,0.4)'  },  // Blue
+  { hex: '#2ecc71', rgba: 'rgba(46,204,113,0.4)'  },  // Green
+  { hex: '#f39c12', rgba: 'rgba(243,156,18,0.4)'  },  // Orange
+  { hex: '#9b59b6', rgba: 'rgba(155,89,182,0.4)'  },  // Purple
+  { hex: '#1abc9c', rgba: 'rgba(26,188,156,0.4)'  },  // Teal
+  { hex: '#e67e22', rgba: 'rgba(230,126,34,0.4)'  },  // Dark Orange
+  { hex: '#2980b9', rgba: 'rgba(41,128,185,0.4)'  },  // Dark Blue
+  { hex: '#c0392b', rgba: 'rgba(192,57,43,0.4)'   },  // Dark Red
+  { hex: '#16a085', rgba: 'rgba(22,160,133,0.4)'  },  // Dark Teal
+];
+
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+const DAYS   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+// ── State ──────────────────────────────────────────────────
+let me        = null;   // { key, displayName, colorIdx }
+let allUsers  = {};     // key → { displayName, colorIdx }
+let avail     = {};     // key → { 'YYYY-MM-DD': true }
+let curYear   = new Date().getFullYear();
+let curMonth  = new Date().getMonth();
+let pollTimer = null;
+
+// ── HTML escaping (prevent XSS from user-supplied names) ───
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── Name → safe Firebase key ───────────────────────────────
+// Firebase keys cannot contain . # $ / [ ]
+function nameToKey(name) {
+  return name.trim()
+    .toLowerCase()
+    .replace(/[.#$/\[\]]/g, '')  // remove forbidden chars
+    .replace(/\s+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    || 'user';
+}
+
+// ── Date helpers (always local-time, never toISOString) ────
+function toISO(y, m, d) {
+  return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+function todayISO() {
+  const d = new Date();
+  return toISO(d.getFullYear(), d.getMonth(), d.getDate());
+}
+function addDays(iso, n) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + n);
+  return toISO(dt.getFullYear(), dt.getMonth(), dt.getDate());
+}
+function fmtShort(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+function fmtFull(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// ── Firebase REST helpers ──────────────────────────────────
+async function fbGet(path) {
+  const r = await fetch(`${FIREBASE_URL}/${path}.json`);
+  if (!r.ok) throw new Error(`Firebase read failed (${r.status})`);
+  return r.json();
+}
+async function fbPut(path, val) {
+  const r = await fetch(`${FIREBASE_URL}/${path}.json`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(val),
+  });
+  if (!r.ok) throw new Error(`Firebase write failed (${r.status})`);
+}
+async function fbDelete(path) {
+  const r = await fetch(`${FIREBASE_URL}/${path}.json`, { method: 'DELETE' });
+  if (!r.ok) throw new Error(`Firebase delete failed (${r.status})`);
+}
+
+// ── Fetch all data ─────────────────────────────────────────
+async function fetchAll() {
+  const data = await fbGet('');
+  allUsers = data?.users ?? {};
+  avail    = data?.avail ?? {};
+}
+
+// ── Demo mode (no Firebase configured) ────────────────────
+function loadDemoMode(rawName) {
+  const myKey = nameToKey(rawName) || 'you';
+
+  // Build fake friend data
+  allUsers = {
+    [myKey]:  { displayName: rawName, colorIdx: 0 },
+    'anna':   { displayName: 'Anna',  colorIdx: 1 },
+    'peter':  { displayName: 'Péter', colorIdx: 2 },
+    'sara':   { displayName: 'Sára',  colorIdx: 3 },
+  };
+
+  // Generate fake availability around the current month
+  const base = todayISO();
+  function pick(...offsets) {
+    return Object.fromEntries(offsets.map(n => [addDays(base, n), true]));
+  }
+
+  avail = {
+    [myKey]: pick(3, 4, 5, 6, 14, 15, 22),
+    'anna':  pick(3, 4, 5, 6, 7, 13, 14, 15, 28),
+    'peter': pick(4, 5, 6, 14, 15, 16, 21, 22),
+    'sara':  pick(5, 6, 14, 15, 20, 21, 22),
+  };
+
+  me = { key: myKey, displayName: rawName, colorIdx: 0 };
+  localStorage.setItem('trip_name', rawName);
+
+  // Show a demo banner
+  document.getElementById('app-screen').insertAdjacentHTML('afterbegin',
+    `<div style="background:#f39c12;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-weight:600;">
+      DEMO MODE — add your Firebase URL to index.html to save data
+     </div>`);
+
+  showApp();
+}
+
+// ── Login ──────────────────────────────────────────────────
+async function doLogin(rawName) {
+  rawName = rawName.trim();
+  if (!rawName) { showErr('Please enter your name.'); return; }
+
+  if (FIREBASE_URL.includes('YOUR-PROJECT')) {
+    loadDemoMode(rawName);
+    return;
+  }
+
+  const key = nameToKey(rawName);
+  if (!key || key === 'user' && !rawName.match(/user/i)) {
+    showErr('Name contains only special characters — try again.');
+    return;
+  }
+
+  setBtnLoading(true);
+  try {
+    await fetchAll();
+
+    let colorIdx;
+    if (allUsers[key]) {
+      // Returning user — restore their colour
+      colorIdx = allUsers[key].colorIdx;
+    } else {
+      // New user — assign next unused colour
+      const used = new Set(Object.values(allUsers).map(u => u.colorIdx));
+      colorIdx = 0;
+      while (used.has(colorIdx) && colorIdx < USER_COLORS.length - 1) colorIdx++;
+      await fbPut(`users/${key}`, { displayName: rawName, colorIdx });
+      allUsers[key] = { displayName: rawName, colorIdx };
+    }
+
+    me = { key, displayName: rawName, colorIdx };
+    localStorage.setItem('trip_name', rawName);
+    showApp();
+  } catch (err) {
+    showErr('Could not connect. Check your Firebase URL and database rules.');
+  } finally {
+    setBtnLoading(false);
+  }
+}
+
+// ── Toggle availability for a day ─────────────────────────
+async function toggleDate(iso) {
+  const { key } = me;
+  const wasOn = !!(avail[key] && avail[key][iso]);
+
+  // Optimistic UI update
+  if (!avail[key]) avail[key] = {};
+  if (wasOn) delete avail[key][iso];
+  else avail[key][iso] = true;
+  renderCalendar();
+  renderSidebar();
+
+  // Persist to Firebase
+  try {
+    if (wasOn) await fbDelete(`avail/${key}/${iso}`);
+    else       await fbPut(`avail/${key}/${iso}`, true);
+  } catch {
+    // Revert on failure
+    if (wasOn) avail[key][iso] = true;
+    else delete avail[key][iso];
+    renderCalendar();
+    renderSidebar();
+  }
+}
+
+// ── Who has a given date? ──────────────────────────────────
+function usersForDate(iso) {
+  return Object.keys(allUsers).filter(k => avail[k] && avail[k][iso]);
+}
+
+// ── Render: calendar grid ──────────────────────────────────
+function renderCalendar() {
+  document.getElementById('cal-month').textContent = `${MONTHS[curMonth]} ${curYear}`;
+
+  const grid  = document.getElementById('cal-grid');
+  const today = todayISO();
+  const days  = new Date(curYear, curMonth + 1, 0).getDate();
+
+  // Offset so grid starts on Monday (JS: 0=Sun)
+  let startOff = new Date(curYear, curMonth, 1).getDay();
+  startOff = startOff === 0 ? 6 : startOff - 1;
+
+  let html = '';
+  DAYS.forEach(d => { html += `<div class="cal-hdr">${d}</div>`; });
+  for (let i = 0; i < startOff; i++) html += `<div class="cal-cell cal-cell--empty"></div>`;
+
+  for (let d = 1; d <= days; d++) {
+    const iso   = toISO(curYear, curMonth, d);
+    const isPast  = iso < today;
+    const isToday = iso === today;
+    const users   = usersForDate(iso);
+
+    let cls = 'cal-cell ';
+    cls += isPast ? 'cal-cell--past' : 'cal-cell--future';
+    if (isToday) cls += ' cal-cell--today';
+
+    // One semi-transparent overlay per person — they visually blend together
+    const layers = users.map(k => {
+      const c = USER_COLORS[allUsers[k]?.colorIdx ?? 0].rgba;
+      return `<div class="color-layer" style="background:${c}"></div>`;
+    }).join('');
+
+    // Small coloured dots at the bottom — one per person
+    const dots = users.length
+      ? `<div class="day-dots">${users.map(k => {
+          const c    = USER_COLORS[allUsers[k]?.colorIdx ?? 0].hex;
+          const name = esc(allUsers[k]?.displayName ?? k);
+          return `<div class="day-dot" style="background:${c}" title="${name}"></div>`;
+        }).join('')}</div>`
+      : '';
+
+    html += `<div class="${cls}" data-date="${iso}">
+      ${layers}
+      <span class="day-num">${d}</span>
+      ${dots}
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+
+  grid.querySelectorAll('.cal-cell--future').forEach(cell => {
+    cell.addEventListener('click', () => toggleDate(cell.dataset.date));
+  });
+}
+
+// ── Render: legend ─────────────────────────────────────────
+function renderLegend() {
+  document.getElementById('cal-legend').innerHTML =
+    Object.entries(allUsers).map(([k, u]) => {
+      const c    = USER_COLORS[u.colorIdx ?? 0].hex;
+      const isMe = k === me.key;
+      return `<div class="legend-item">
+        <div class="legend-swatch" style="background:${c}"></div>
+        <span>${esc(u.displayName)}${isMe ? ' <span style="color:#aaa;font-weight:400">(you)</span>' : ''}</span>
+      </div>`;
+    }).join('');
+}
+
+// ── Render: sidebar ────────────────────────────────────────
+function renderSidebar() {
+  renderWhos();
+  renderPopular();
+}
+
+function renderWhos() {
+  const el      = document.getElementById('who-list');
+  const entries = Object.entries(allUsers);
+  if (!entries.length) {
+    el.innerHTML = '<p style="font-size:13px;color:#aaa">No one has joined yet!</p>';
+    return;
+  }
+  el.innerHTML = entries.map(([k, u]) => {
+    const c     = USER_COLORS[u.colorIdx ?? 0].hex;
+    const count = Object.keys(avail[k] ?? {}).length;
+    const isMe  = k === me.key;
+    return `<div class="who-item">
+      <div class="who-dot" style="background:${c}"></div>
+      <span class="who-name">${esc(u.displayName)}${isMe ? ' <span class="who-you">(you)</span>' : ''}</span>
+      <span class="who-count">${count} day${count !== 1 ? 's' : ''}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderPopular() {
+  const el = document.getElementById('popular-list');
+
+  // Build date → Set<userKey>
+  const dateMap = {};
+  Object.keys(allUsers).forEach(k => {
+    Object.keys(avail[k] ?? {}).forEach(iso => {
+      if (!dateMap[iso]) dateMap[iso] = new Set();
+      dateMap[iso].add(k);
+    });
+  });
+
+  // Only dates with 2+ people
+  const overlapDates = Object.keys(dateMap)
+    .filter(iso => dateMap[iso].size >= 2)
+    .sort();
+
+  if (!overlapDates.length) {
+    el.innerHTML = `<p class="pop-empty">No overlapping dates yet.<br>
+      Share the site link with your friends so they can mark their dates!</p>`;
+    return;
+  }
+
+  // Group consecutive dates into ranges
+  const groups = [];
+  let grp = null;
+  overlapDates.forEach(iso => {
+    if (!grp || iso !== addDays(grp.end, 1)) {
+      grp = { start: iso, end: iso, dates: [iso] };
+      groups.push(grp);
+    } else {
+      grp.end = iso;
+      grp.dates.push(iso);
+    }
+  });
+
+  // Score each group: find users available for ALL days in the group ("core"),
+  // prefer more people and longer consecutive runs
+  const scored = groups.map(g => {
+    const core = g.dates.reduce((acc, iso) => {
+      const dayUsers = dateMap[iso];
+      if (acc === null) return new Set(dayUsers);
+      return new Set([...acc].filter(k => dayUsers.has(k)));
+    }, null) ?? new Set();
+
+    const maxPeople = Math.max(...g.dates.map(iso => dateMap[iso].size));
+    return {
+      ...g,
+      core,
+      maxPeople,
+      // Primary: how many are free every day; Secondary: streak length; Tertiary: max overlap
+      score: core.size * 1000 + g.dates.length * 10 + maxPeople,
+    };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+
+  el.innerHTML = scored.slice(0, 5).map(g => {
+    const label = g.start === g.end
+      ? fmtFull(g.start)
+      : `${fmtShort(g.start)} – ${fmtShort(g.end)}`;
+
+    // Show core users (free all days), fall back to union of anyone available
+    const showKeys = g.core.size >= 2
+      ? [...g.core]
+      : [...new Set(g.dates.flatMap(iso => [...dateMap[iso]]))];
+
+    const days    = g.dates.length;
+    const people  = g.core.size >= 2 ? g.core.size : g.maxPeople;
+    const meta    = `${people} people free${days > 1 ? ` · ${days} days in a row` : ''}`;
+
+    const userChips = showKeys.map(k => {
+      const c    = USER_COLORS[allUsers[k]?.colorIdx ?? 0].hex;
+      const name = esc(allUsers[k]?.displayName ?? k);
+      return `<div class="pop-user">
+        <div class="pop-dot" style="background:${c}"></div>
+        <span>${name}</span>
+      </div>`;
+    }).join('');
+
+    return `<div class="pop-item">
+      <div class="pop-date">${label}</div>
+      <div class="pop-meta">${meta}</div>
+      <div class="pop-users">${userChips}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Show / hide screens ────────────────────────────────────
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display  = 'block';
+
+  const c = USER_COLORS[me.colorIdx ?? 0].hex;
+  document.getElementById('header-dot').style.background = c;
+  document.getElementById('header-name').textContent = me.displayName;
+
+  renderLegend();
+  renderCalendar();
+  renderSidebar();
+
+  // Refresh data every 12 seconds so everyone sees each other's updates
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    await fetchAll();
+    renderLegend();
+    renderCalendar();
+    renderSidebar();
+  }, 12000);
+}
+
+function showLogin() {
+  clearInterval(pollTimer);
+  me = null;
+  document.getElementById('app-screen').style.display  = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('name-input').value = '';
+  showErr('');
+}
+
+function showErr(msg) {
+  document.getElementById('login-error').textContent = msg;
+}
+function setBtnLoading(on) {
+  const btn = document.getElementById('login-btn');
+  btn.textContent = on ? 'Connecting…' : "Let's go →";
+  btn.disabled = on;
+}
+
+// ── Event listeners ────────────────────────────────────────
+document.getElementById('login-btn').addEventListener('click',
+  () => doLogin(document.getElementById('name-input').value));
+
+document.getElementById('name-input').addEventListener('keydown',
+  e => { if (e.key === 'Enter') doLogin(e.target.value); });
+
+document.getElementById('change-btn').addEventListener('click', showLogin);
+
+document.getElementById('cal-prev').addEventListener('click', () => {
+  curMonth--;
+  if (curMonth < 0) { curMonth = 11; curYear--; }
+  renderCalendar();
+});
+document.getElementById('cal-next').addEventListener('click', () => {
+  curMonth++;
+  if (curMonth > 11) { curMonth = 0; curYear++; }
+  renderCalendar();
+});
+
+// ── Auto-login from localStorage ───────────────────────────
+(async () => {
+  const saved = localStorage.getItem('trip_name');
+  if (saved) {
+    document.getElementById('name-input').value = saved;
+    try { await doLogin(saved); } catch { /* fail silently */ }
+  }
+})();
+</script>
+</body>
+</html>
