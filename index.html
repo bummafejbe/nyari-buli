@@ -77,7 +77,7 @@
       height: 56px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       position: sticky;
       top: 0;
       z-index: 100;
@@ -106,8 +106,62 @@
       cursor: pointer;
       color: #555;
       font-weight: 500;
+      white-space: nowrap;
     }
     .change-btn:hover { background: #f5f5f5; border-color: #bbb; }
+
+    /* ── Language button ────────────────────────────────── */
+    .lang-btn {
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      transition: background 0.2s, color 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    /* In header (desktop) */
+    .lang-btn--header {
+      padding: 5px 11px;
+      border: 1.5px solid #ddd;
+      border-radius: 20px;
+      background: #fff;
+      font-size: 12px;
+      color: #555;
+    }
+    .lang-btn--header:hover { background: #f5f5f5; border-color: #bbb; }
+    /* In login card (desktop) */
+    .lang-btn--card {
+      margin-top: 14px;
+      padding: 7px 20px;
+      border: 1.5px solid #ddd;
+      border-radius: 20px;
+      background: #fff;
+      font-size: 13px;
+      color: #555;
+    }
+    .lang-btn--card:hover { background: #f5f5f5; }
+    /* Fixed bottom-right (mobile) */
+    .lang-btn--mobile {
+      display: none;
+      position: fixed;
+      bottom: 22px;
+      right: 22px;
+      z-index: 500;
+      padding: 13px 20px;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-size: 14px;
+      box-shadow: 0 4px 18px rgba(52,152,219,0.4);
+    }
+    .lang-btn--mobile:hover { background: #2980b9; }
+
+    @media (max-width: 740px) {
+      .lang-btn--header { display: none; }
+      .lang-btn--card   { display: none; }
+      .lang-btn--mobile { display: block; }
+    }
 
     /* ── Layout ─────────────────────────────────────────── */
     .app-body {
@@ -216,7 +270,6 @@
       inset: 0;
       pointer-events: none;
     }
-
     .day-num {
       position: relative;
       z-index: 2;
@@ -255,7 +308,6 @@
       color: #bbb;
       margin-bottom: 12px;
     }
-
     .pop-item {
       padding: 10px 12px;
       background: #f7f8fa;
@@ -282,7 +334,6 @@
       padding: 20px 0;
       line-height: 1.7;
     }
-
     .who-item {
       display: flex;
       align-items: center;
@@ -292,42 +343,42 @@
       font-size: 13px;
     }
     .who-item:last-child { border-bottom: none; padding-bottom: 0; }
-    .who-dot  { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
-    .who-name { flex: 1; font-weight: 600; }
-    .who-you  { font-size: 11px; color: #aaa; font-weight: 400; }
+    .who-dot   { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+    .who-name  { flex: 1; font-weight: 600; }
+    .who-you   { font-size: 11px; color: #aaa; font-weight: 400; }
     .who-count { font-size: 11px; color: #aaa; white-space: nowrap; }
   </style>
 </head>
 <body>
 
-<!-- ═══════════════════════ BEJELENTKEZÉS ════════════════ -->
+<!-- ══════════════════ BEJELENTKEZÉS ══════════════════════ -->
 <div id="login-screen">
   <div class="login-card">
     <span class="login-emoji">🌴</span>
-    <h1>Nyári Buli</h1>
-    <p>Add meg a neved, hogy lásd a naptárat és bejelölhesd, mikor érsz rá.<br>
-       Ha visszajössz ugyanezzel a névvel, ugyanazt a színt kapod.</p>
+    <h1 id="t-page-title">Nyári Buli</h1>
+    <p id="t-login-desc">Add meg a neved, hogy lásd a naptárat és bejelölhesd, mikor érsz rá.<br>Ha visszajössz ugyanezzel a névvel, ugyanazt a színt kapod.</p>
     <input id="name-input" class="login-input" type="text"
            placeholder="A neved…" maxlength="40"
            autocomplete="off" autocapitalize="words" spellcheck="false">
     <div class="login-error" id="login-error"></div>
     <button id="login-btn" class="login-btn">Belépés →</button>
+    <button class="lang-btn lang-btn--card" onclick="toggleLang()" id="lang-card-btn">EN</button>
   </div>
 </div>
 
-<!-- ═══════════════════════ APP ══════════════════════════ -->
+<!-- ══════════════════ APP ═════════════════════════════════ -->
 <div id="app-screen">
   <header class="app-header">
-    <span class="header-title">🌴 Nyári Buli</span>
+    <span class="header-title" id="t-header-title">🌴 Nyári Buli</span>
     <div class="header-user">
       <div class="header-dot" id="header-dot"></div>
       <span id="header-name"></span>
     </div>
+    <button class="lang-btn lang-btn--header" onclick="toggleLang()" id="lang-header-btn">EN</button>
     <button class="change-btn" id="change-btn">Név módosítása</button>
   </header>
 
   <div class="app-body">
-    <!-- Naptár -->
     <div class="card">
       <div class="cal-nav">
         <button class="nav-btn" id="cal-prev">← Előző</button>
@@ -335,23 +386,25 @@
         <button class="nav-btn" id="cal-next">Következő →</button>
       </div>
       <div class="cal-legend" id="cal-legend"></div>
-      <p class="cal-hint">Kattints egy napra, ha ráérsz – kattints újra a jelölés törléséhez.</p>
+      <p class="cal-hint" id="t-cal-hint">Kattints egy napra, ha ráérsz – kattints újra a jelölés törléséhez.</p>
       <div class="cal-grid" id="cal-grid"></div>
     </div>
 
-    <!-- Oldalsáv -->
     <aside class="sidebar">
       <div class="card">
-        <p class="section-label">Legjobb dátumok</p>
+        <p class="section-label" id="t-best-dates">Legjobb dátumok</p>
         <div id="popular-list"></div>
       </div>
       <div class="card">
-        <p class="section-label">Kik terveznek</p>
+        <p class="section-label" id="t-who-planning">Kik terveznek</p>
         <div id="who-list"></div>
       </div>
     </aside>
   </div>
 </div>
+
+<!-- Mobil nyelvi gomb (jobb alsó sarok) -->
+<button class="lang-btn lang-btn--mobile" onclick="toggleLang()" id="lang-mobile-btn">EN</button>
 
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -360,6 +413,105 @@
 const FIREBASE_URL = 'https://nyari-buli-default-rtdb.firebaseio.com';
 // ═══════════════════════════════════════════════════════════
 
+// ── Fordítások ─────────────────────────────────────────────
+const LANGS = {
+  hu: {
+    pageTitle:      'Nyári Buli',
+    headerTitle:    '🌴 Nyári Buli',
+    loginDescHtml:  'Add meg a neved, hogy lásd a naptárat és bejelölhesd, mikor érsz rá.<br>Ha visszajössz ugyanezzel a névvel, ugyanazt a színt kapod.',
+    placeholder:    'A neved…',
+    loginBtn:       'Belépés →',
+    connecting:     'Csatlakozás…',
+    changeName:     'Név módosítása',
+    prevMonth:      '← Előző',
+    nextMonth:      'Következő →',
+    calHint:        'Kattints egy napra, ha ráérsz – kattints újra a jelölés törléséhez.',
+    bestDates:      'Legjobb dátumok',
+    whoPlanning:    'Kik terveznek',
+    youLabel:       '(te)',
+    noOneYet:       'Még senki sem csatlakozott!',
+    noOverlapHtml:  'Még nincs átfedő dátum.<br>Oszd meg a linket a barátaiddal, hogy ők is bejelölhessék a napjaikat!',
+    peopleFree:     n => `${n} ember ér rá`,
+    daysInRow:      n => `${n} egymás utáni nap`,
+    dayCount:       n => `${n} nap`,
+    errEmpty:       'Kérjük add meg a neved.',
+    errChars:       'A név csak speciális karaktereket tartalmaz – próbáld újra.',
+    errConnect:     'Nem sikerült csatlakozni. Ellenőrizd a Firebase URL-t és az adatbázis szabályait.',
+    demoHtml:       'DEMO MÓD — add meg a Firebase URL-t az index.html-ben az adatok mentéséhez',
+    langLabel:      'EN',
+    months: ['Január','Február','Március','Április','Május','Június',
+             'Július','Augusztus','Szeptember','Október','November','December'],
+    days:   ['H','K','Sze','Cs','P','Szo','V'],
+    dateLocale: 'hu-HU',
+  },
+  en: {
+    pageTitle:      'Summer Party',
+    headerTitle:    '🌴 Summer Party',
+    loginDescHtml:  'Enter your name to see the calendar and mark when you\'re available.<br>Come back with the same name and you\'ll keep your colour.',
+    placeholder:    'Your name…',
+    loginBtn:       'Let\'s go →',
+    connecting:     'Connecting…',
+    changeName:     'Change name',
+    prevMonth:      '← Prev',
+    nextMonth:      'Next →',
+    calHint:        'Click a day to mark when you\'re available — click again to unmark.',
+    bestDates:      'Best dates',
+    whoPlanning:    'Who\'s planning',
+    youLabel:       '(you)',
+    noOneYet:       'No one has joined yet!',
+    noOverlapHtml:  'No overlapping dates yet.<br>Share the site link with your friends so they can mark their dates!',
+    peopleFree:     n => `${n} people free`,
+    daysInRow:      n => `${n} days in a row`,
+    dayCount:       n => `${n} day${n !== 1 ? 's' : ''}`,
+    errEmpty:       'Please enter your name.',
+    errChars:       'Name contains only special characters — try again.',
+    errConnect:     'Could not connect. Check your Firebase URL and database rules.',
+    demoHtml:       'DEMO MODE — add your Firebase URL to index.html to save data',
+    langLabel:      'HU',
+    months: ['January','February','March','April','May','June',
+             'July','August','September','October','November','December'],
+    days:   ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    dateLocale: 'en-GB',
+  },
+};
+
+let lang = localStorage.getItem('trip_lang') || 'hu';
+function L() { return LANGS[lang]; }
+
+function toggleLang() {
+  lang = lang === 'hu' ? 'en' : 'hu';
+  localStorage.setItem('trip_lang', lang);
+  applyTranslations();
+  if (me) { renderLegend(); renderCalendar(); renderSidebar(); }
+}
+
+function applyTranslations() {
+  const l = L();
+  document.documentElement.lang = lang;
+  document.title = l.pageTitle;
+
+  // Login
+  document.getElementById('t-page-title').textContent   = l.pageTitle;
+  document.getElementById('t-login-desc').innerHTML     = l.loginDescHtml;
+  document.getElementById('name-input').placeholder     = l.placeholder;
+  document.getElementById('login-btn').textContent      = l.loginBtn;
+
+  // Header / app
+  document.getElementById('t-header-title').textContent = l.headerTitle;
+  document.getElementById('change-btn').textContent     = l.changeName;
+  document.getElementById('cal-prev').textContent       = l.prevMonth;
+  document.getElementById('cal-next').textContent       = l.nextMonth;
+  document.getElementById('t-cal-hint').textContent     = l.calHint;
+  document.getElementById('t-best-dates').textContent   = l.bestDates;
+  document.getElementById('t-who-planning').textContent = l.whoPlanning;
+
+  // All lang buttons
+  ['lang-card-btn','lang-header-btn','lang-mobile-btn'].forEach(id => {
+    document.getElementById(id).textContent = l.langLabel;
+  });
+}
+
+// ── Színek ─────────────────────────────────────────────────
 const USER_COLORS = [
   { hex: '#e74c3c', rgba: 'rgba(231,76,60,0.4)'   },
   { hex: '#3498db', rgba: 'rgba(52,152,219,0.4)'  },
@@ -373,38 +525,32 @@ const USER_COLORS = [
   { hex: '#16a085', rgba: 'rgba(22,160,133,0.4)'  },
 ];
 
-const MONTHS = ['Január','Február','Március','Április','Május','Június',
-                'Július','Augusztus','Szeptember','Október','November','December'];
-const DAYS   = ['H','K','Sze','Cs','P','Szo','V'];
-
 // ── Állapot ────────────────────────────────────────────────
 let me        = null;
 let allUsers  = {};
 let avail     = {};
 let curYear   = 2026;
-let curMonth  = 6;   // Július (0-alapú)
+let curMonth  = 6;
 let pollTimer = null;
 
 // ── HTML escape ────────────────────────────────────────────
 function esc(s) {
   return String(s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ── Név → Firebase kulcs ───────────────────────────────────
 function nameToKey(name) {
-  return name.trim()
-    .toLowerCase()
+  return name.trim().toLowerCase()
     .replace(/[.#$/\[\]]/g, '')
     .replace(/\s+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    || 'user';
+    .replace(/^_+|_+$/g, '') || 'user';
 }
 
-// ── Dátum segédfüggvények (helyi idő, soha nem toISOString) ─
+// ── Dátum segédfüggvények ──────────────────────────────────
 function toISO(y, m, d) {
-  return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 }
 function todayISO() {
   const d = new Date();
@@ -412,22 +558,22 @@ function todayISO() {
 }
 function addDays(iso, n) {
   const [y, m, d] = iso.split('-').map(Number);
-  const dt = new Date(y, m - 1, d + n);
+  const dt = new Date(y, m-1, d+n);
   return toISO(dt.getFullYear(), dt.getMonth(), dt.getDate());
 }
 function fmtShort(iso) {
   const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('hu-HU', { day: 'numeric', month: 'short' });
+  return new Date(y, m-1, d).toLocaleDateString(L().dateLocale, { day:'numeric', month:'short' });
 }
 function fmtFull(iso) {
   const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('hu-HU', { day: 'numeric', month: 'long', year: 'numeric' });
+  return new Date(y, m-1, d).toLocaleDateString(L().dateLocale, { day:'numeric', month:'long', year:'numeric' });
 }
 
 // ── Firebase REST ──────────────────────────────────────────
 async function fbGet(path) {
   const r = await fetch(`${FIREBASE_URL}/${path}.json`);
-  if (!r.ok) throw new Error(`Firebase olvasási hiba (${r.status})`);
+  if (!r.ok) throw new Error(`Firebase read error (${r.status})`);
   return r.json();
 }
 async function fbPut(path, val) {
@@ -436,53 +582,47 @@ async function fbPut(path, val) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(val),
   });
-  if (!r.ok) throw new Error(`Firebase írási hiba (${r.status})`);
+  if (!r.ok) throw new Error(`Firebase write error (${r.status})`);
 }
 async function fbDelete(path) {
   const r = await fetch(`${FIREBASE_URL}/${path}.json`, { method: 'DELETE' });
-  if (!r.ok) throw new Error(`Firebase törlési hiba (${r.status})`);
+  if (!r.ok) throw new Error(`Firebase delete error (${r.status})`);
 }
 
-// ── Összes adat lekérése ───────────────────────────────────
 async function fetchAll() {
   const data = await fbGet('');
   allUsers = data?.users ?? {};
   avail    = data?.avail ?? {};
 }
 
-// ── Demo mód (nincs Firebase beállítva) ───────────────────
+// ── Demo mód ───────────────────────────────────────────────
 function loadDemoMode(rawName) {
   const myKey = nameToKey(rawName) || 'te';
-
   allUsers = {
-    [myKey]:  { displayName: rawName, colorIdx: 0 },
-    'anna':   { displayName: 'Anna',  colorIdx: 1 },
-    'peter':  { displayName: 'Péter', colorIdx: 2 },
-    'sara':   { displayName: 'Sára',  colorIdx: 3 },
+    [myKey]: { displayName: rawName, colorIdx: 0 },
+    'anna':  { displayName: 'Anna',  colorIdx: 1 },
+    'peter': { displayName: 'Péter', colorIdx: 2 },
+    'sara':  { displayName: 'Sára',  colorIdx: 3 },
   };
-
   avail = {
-    [myKey]: { '2026-07-03': true, '2026-07-04': true, '2026-07-05': true, '2026-07-06': true, '2026-07-14': true, '2026-07-15': true, '2026-07-22': true },
-    'anna':  { '2026-07-03': true, '2026-07-04': true, '2026-07-05': true, '2026-07-06': true, '2026-07-07': true, '2026-07-13': true, '2026-07-14': true, '2026-07-15': true, '2026-07-28': true },
-    'peter': { '2026-07-04': true, '2026-07-05': true, '2026-07-06': true, '2026-07-14': true, '2026-07-15': true, '2026-07-16': true, '2026-07-21': true, '2026-07-22': true },
-    'sara':  { '2026-07-05': true, '2026-07-06': true, '2026-07-14': true, '2026-07-15': true, '2026-07-20': true, '2026-07-21': true, '2026-07-22': true },
+    [myKey]: { '2026-07-03':true,'2026-07-04':true,'2026-07-05':true,'2026-07-06':true,'2026-07-14':true,'2026-07-15':true,'2026-07-22':true },
+    'anna':  { '2026-07-03':true,'2026-07-04':true,'2026-07-05':true,'2026-07-06':true,'2026-07-07':true,'2026-07-13':true,'2026-07-14':true,'2026-07-15':true,'2026-07-28':true },
+    'peter': { '2026-07-04':true,'2026-07-05':true,'2026-07-06':true,'2026-07-14':true,'2026-07-15':true,'2026-07-16':true,'2026-07-21':true,'2026-07-22':true },
+    'sara':  { '2026-07-05':true,'2026-07-06':true,'2026-07-14':true,'2026-07-15':true,'2026-07-20':true,'2026-07-21':true,'2026-07-22':true },
   };
-
   me = { key: myKey, displayName: rawName, colorIdx: 0 };
   localStorage.setItem('trip_name', rawName);
-
   document.getElementById('app-screen').insertAdjacentHTML('afterbegin',
-    `<div style="background:#f39c12;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-weight:600;">
-      DEMO MÓD — add meg a Firebase URL-t az index.html-ben az adatok mentéséhez
+    `<div style="background:#f39c12;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-weight:600;" id="demo-banner">
+      ${L().demoHtml}
      </div>`);
-
   showApp();
 }
 
 // ── Bejelentkezés ──────────────────────────────────────────
 async function doLogin(rawName) {
   rawName = rawName.trim();
-  if (!rawName) { showErr('Kérjük add meg a neved.'); return; }
+  if (!rawName) { showErr(L().errEmpty); return; }
 
   if (FIREBASE_URL.includes('YOUR-PROJECT')) {
     loadDemoMode(rawName);
@@ -491,14 +631,13 @@ async function doLogin(rawName) {
 
   const key = nameToKey(rawName);
   if (!key || (key === 'user' && !rawName.match(/user/i))) {
-    showErr('A név csak speciális karaktereket tartalmaz – próbáld újra.');
+    showErr(L().errChars);
     return;
   }
 
   setBtnLoading(true);
   try {
     await fetchAll();
-
     let colorIdx;
     if (allUsers[key]) {
       colorIdx = allUsers[key].colorIdx;
@@ -509,12 +648,11 @@ async function doLogin(rawName) {
       await fbPut(`users/${key}`, { displayName: rawName, colorIdx });
       allUsers[key] = { displayName: rawName, colorIdx };
     }
-
     me = { key, displayName: rawName, colorIdx };
     localStorage.setItem('trip_name', rawName);
     showApp();
-  } catch (err) {
-    showErr('Nem sikerült csatlakozni. Ellenőrizd a Firebase URL-t és az adatbázis szabályait.');
+  } catch {
+    showErr(L().errConnect);
   } finally {
     setBtnLoading(false);
   }
@@ -524,42 +662,33 @@ async function doLogin(rawName) {
 async function toggleDate(iso) {
   const { key } = me;
   const wasOn = !!(avail[key] && avail[key][iso]);
-
   if (!avail[key]) avail[key] = {};
-  if (wasOn) delete avail[key][iso];
-  else avail[key][iso] = true;
-  renderCalendar();
-  renderSidebar();
-
+  if (wasOn) delete avail[key][iso]; else avail[key][iso] = true;
+  renderCalendar(); renderSidebar();
   try {
     if (wasOn) await fbDelete(`avail/${key}/${iso}`);
     else       await fbPut(`avail/${key}/${iso}`, true);
   } catch {
-    if (wasOn) avail[key][iso] = true;
-    else delete avail[key][iso];
-    renderCalendar();
-    renderSidebar();
+    if (wasOn) avail[key][iso] = true; else delete avail[key][iso];
+    renderCalendar(); renderSidebar();
   }
 }
 
-// ── Kik jelölték be az adott napot? ───────────────────────
 function usersForDate(iso) {
   return Object.keys(allUsers).filter(k => avail[k] && avail[k][iso]);
 }
 
-// ── Naptár megjelenítése ───────────────────────────────────
+// ── Naptár ─────────────────────────────────────────────────
 function renderCalendar() {
-  document.getElementById('cal-month').textContent = `${MONTHS[curMonth]} ${curYear}`;
-
+  document.getElementById('cal-month').textContent = `${L().months[curMonth]} ${curYear}`;
   const grid  = document.getElementById('cal-grid');
   const today = todayISO();
-  const days  = new Date(curYear, curMonth + 1, 0).getDate();
-
+  const days  = new Date(curYear, curMonth+1, 0).getDate();
   let startOff = new Date(curYear, curMonth, 1).getDay();
   startOff = startOff === 0 ? 6 : startOff - 1;
 
   let html = '';
-  DAYS.forEach(d => { html += `<div class="cal-hdr">${d}</div>`; });
+  L().days.forEach(d => { html += `<div class="cal-hdr">${d}</div>`; });
   for (let i = 0; i < startOff; i++) html += `<div class="cal-cell cal-cell--empty"></div>`;
 
   for (let d = 1; d <= days; d++) {
@@ -568,8 +697,7 @@ function renderCalendar() {
     const isToday = iso === today;
     const users   = usersForDate(iso);
 
-    let cls = 'cal-cell ';
-    cls += isPast ? 'cal-cell--past' : 'cal-cell--future';
+    let cls = 'cal-cell ' + (isPast ? 'cal-cell--past' : 'cal-cell--future');
     if (isToday) cls += ' cal-cell--today';
 
     const layers = users.map(k => {
@@ -585,15 +713,10 @@ function renderCalendar() {
         }).join('')}</div>`
       : '';
 
-    html += `<div class="${cls}" data-date="${iso}">
-      ${layers}
-      <span class="day-num">${d}</span>
-      ${dots}
-    </div>`;
+    html += `<div class="${cls}" data-date="${iso}">${layers}<span class="day-num">${d}</span>${dots}</div>`;
   }
 
   grid.innerHTML = html;
-
   grid.querySelectorAll('.cal-cell--future').forEach(cell => {
     cell.addEventListener('click', () => toggleDate(cell.dataset.date));
   });
@@ -607,22 +730,19 @@ function renderLegend() {
       const isMe = k === me.key;
       return `<div class="legend-item">
         <div class="legend-swatch" style="background:${c}"></div>
-        <span>${esc(u.displayName)}${isMe ? ' <span style="color:#aaa;font-weight:400">(te)</span>' : ''}</span>
+        <span>${esc(u.displayName)}${isMe ? ` <span style="color:#aaa;font-weight:400">${L().youLabel}</span>` : ''}</span>
       </div>`;
     }).join('');
 }
 
 // ── Oldalsáv ───────────────────────────────────────────────
-function renderSidebar() {
-  renderWhos();
-  renderPopular();
-}
+function renderSidebar() { renderWhos(); renderPopular(); }
 
 function renderWhos() {
   const el      = document.getElementById('who-list');
   const entries = Object.entries(allUsers);
   if (!entries.length) {
-    el.innerHTML = '<p style="font-size:13px;color:#aaa">Még senki sem csatlakozott!</p>';
+    el.innerHTML = `<p style="font-size:13px;color:#aaa">${L().noOneYet}</p>`;
     return;
   }
   el.innerHTML = entries.map(([k, u]) => {
@@ -631,15 +751,14 @@ function renderWhos() {
     const isMe  = k === me.key;
     return `<div class="who-item">
       <div class="who-dot" style="background:${c}"></div>
-      <span class="who-name">${esc(u.displayName)}${isMe ? ' <span class="who-you">(te)</span>' : ''}</span>
-      <span class="who-count">${count} nap</span>
+      <span class="who-name">${esc(u.displayName)}${isMe ? ` <span class="who-you">${L().youLabel}</span>` : ''}</span>
+      <span class="who-count">${L().dayCount(count)}</span>
     </div>`;
   }).join('');
 }
 
 function renderPopular() {
   const el = document.getElementById('popular-list');
-
   const dateMap = {};
   Object.keys(allUsers).forEach(k => {
     Object.keys(avail[k] ?? {}).forEach(iso => {
@@ -648,13 +767,10 @@ function renderPopular() {
     });
   });
 
-  const overlapDates = Object.keys(dateMap)
-    .filter(iso => dateMap[iso].size >= 2)
-    .sort();
+  const overlapDates = Object.keys(dateMap).filter(iso => dateMap[iso].size >= 2).sort();
 
   if (!overlapDates.length) {
-    el.innerHTML = `<p class="pop-empty">Még nincs átfedő dátum.<br>
-      Oszd meg a linket a barátaiddal, hogy ők is bejelölhessék a napjaikat!</p>`;
+    el.innerHTML = `<p class="pop-empty">${L().noOverlapHtml}</p>`;
     return;
   }
 
@@ -664,56 +780,38 @@ function renderPopular() {
     if (!grp || iso !== addDays(grp.end, 1)) {
       grp = { start: iso, end: iso, dates: [iso] };
       groups.push(grp);
-    } else {
-      grp.end = iso;
-      grp.dates.push(iso);
-    }
+    } else { grp.end = iso; grp.dates.push(iso); }
   });
 
   const scored = groups.map(g => {
     const core = g.dates.reduce((acc, iso) => {
-      const dayUsers = dateMap[iso];
-      if (acc === null) return new Set(dayUsers);
-      return new Set([...acc].filter(k => dayUsers.has(k)));
+      const du = dateMap[iso];
+      if (acc === null) return new Set(du);
+      return new Set([...acc].filter(k => du.has(k)));
     }, null) ?? new Set();
-
     const maxPeople = Math.max(...g.dates.map(iso => dateMap[iso].size));
-    return {
-      ...g,
-      core,
-      maxPeople,
-      score: core.size * 1000 + g.dates.length * 10 + maxPeople,
-    };
+    return { ...g, core, maxPeople, score: core.size * 1000 + g.dates.length * 10 + maxPeople };
   });
 
   scored.sort((a, b) => b.score - a.score);
 
   el.innerHTML = scored.slice(0, 5).map(g => {
-    const label = g.start === g.end
-      ? fmtFull(g.start)
-      : `${fmtShort(g.start)} – ${fmtShort(g.end)}`;
+    const label    = g.start === g.end ? fmtFull(g.start) : `${fmtShort(g.start)} – ${fmtShort(g.end)}`;
+    const showKeys = g.core.size >= 2 ? [...g.core] : [...new Set(g.dates.flatMap(iso => [...dateMap[iso]]))];
+    const days     = g.dates.length;
+    const people   = g.core.size >= 2 ? g.core.size : g.maxPeople;
+    const meta     = L().peopleFree(people) + (days > 1 ? ` · ${L().daysInRow(days)}` : '');
 
-    const showKeys = g.core.size >= 2
-      ? [...g.core]
-      : [...new Set(g.dates.flatMap(iso => [...dateMap[iso]]))];
-
-    const days   = g.dates.length;
-    const people = g.core.size >= 2 ? g.core.size : g.maxPeople;
-    const meta   = `${people} ember ér rá${days > 1 ? ` · ${days} egymás utáni nap` : ''}`;
-
-    const userChips = showKeys.map(k => {
+    const chips = showKeys.map(k => {
       const c    = USER_COLORS[allUsers[k]?.colorIdx ?? 0].hex;
       const name = esc(allUsers[k]?.displayName ?? k);
-      return `<div class="pop-user">
-        <div class="pop-dot" style="background:${c}"></div>
-        <span>${name}</span>
-      </div>`;
+      return `<div class="pop-user"><div class="pop-dot" style="background:${c}"></div><span>${name}</span></div>`;
     }).join('');
 
     return `<div class="pop-item">
       <div class="pop-date">${label}</div>
       <div class="pop-meta">${meta}</div>
-      <div class="pop-users">${userChips}</div>
+      <div class="pop-users">${chips}</div>
     </div>`;
   }).join('');
 }
@@ -721,64 +819,48 @@ function renderPopular() {
 // ── Képernyők ──────────────────────────────────────────────
 function showApp() {
   document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app-screen').style.display  = 'block';
-
+  document.getElementById('app-screen').style.display   = 'block';
   const c = USER_COLORS[me.colorIdx ?? 0].hex;
   document.getElementById('header-dot').style.background = c;
   document.getElementById('header-name').textContent = me.displayName;
-
-  renderLegend();
-  renderCalendar();
-  renderSidebar();
-
+  renderLegend(); renderCalendar(); renderSidebar();
   clearInterval(pollTimer);
   pollTimer = setInterval(async () => {
-    await fetchAll();
-    renderLegend();
-    renderCalendar();
-    renderSidebar();
+    await fetchAll(); renderLegend(); renderCalendar(); renderSidebar();
   }, 12000);
 }
 
 function showLogin() {
   clearInterval(pollTimer);
   me = null;
-  document.getElementById('app-screen').style.display  = 'none';
+  document.getElementById('app-screen').style.display   = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('name-input').value = '';
   showErr('');
 }
 
-function showErr(msg) {
-  document.getElementById('login-error').textContent = msg;
-}
+function showErr(msg) { document.getElementById('login-error').textContent = msg; }
 function setBtnLoading(on) {
   const btn = document.getElementById('login-btn');
-  btn.textContent = on ? 'Csatlakozás…' : 'Belépés →';
+  btn.textContent = on ? L().connecting : L().loginBtn;
   btn.disabled = on;
 }
 
 // ── Eseménykezelők ─────────────────────────────────────────
 document.getElementById('login-btn').addEventListener('click',
   () => doLogin(document.getElementById('name-input').value));
-
 document.getElementById('name-input').addEventListener('keydown',
   e => { if (e.key === 'Enter') doLogin(e.target.value); });
-
 document.getElementById('change-btn').addEventListener('click', showLogin);
-
 document.getElementById('cal-prev').addEventListener('click', () => {
-  curMonth--;
-  if (curMonth < 0) { curMonth = 11; curYear--; }
-  renderCalendar();
+  curMonth--; if (curMonth < 0) { curMonth = 11; curYear--; } renderCalendar();
 });
 document.getElementById('cal-next').addEventListener('click', () => {
-  curMonth++;
-  if (curMonth > 11) { curMonth = 0; curYear++; }
-  renderCalendar();
+  curMonth++; if (curMonth > 11) { curMonth = 0; curYear++; } renderCalendar();
 });
 
-// ── Automatikus bejelentkezés ──────────────────────────────
+// ── Indulás ────────────────────────────────────────────────
+applyTranslations();
 (async () => {
   const saved = localStorage.getItem('trip_name');
   if (saved) {
